@@ -1,0 +1,16 @@
+flowchart TB
+    subgraph InternalUser["Internal User (VPN / Bastion / VPC)"]
+    end
+
+    InternalUser --> ALB["Internal ALB (Ingress Controller)"]
+
+    subgraph VPC["AWS VPC (3 AZs)"]
+      ALB --> EKS["EKS Cluster"]
+      EKS --> Wiki["Wiki.js Deployment"]
+      Wiki --> Postgres["PostgreSQL StatefulSet"]
+      EKS --> CloudWatch["CloudWatch Observability"]
+      EKS --> MetricsServer["Metrics Server"]
+    end
+
+    Route53["Route53 Private Hosted Zone"] --> ALB
+    CloudWatch --> Dashboard["CloudWatch Metrics & Logs"]

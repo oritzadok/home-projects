@@ -1,0 +1,36 @@
+replicaCount: 3
+
+postgresql:
+  persistence:
+    storageClass: "gp3"
+    
+ingress:
+  enabled: true
+  className: "alb"
+  annotations:
+    kubernetes.io/ingress.class: alb
+    # Since should be company internal for enterprise teams
+    alb.ingress.kubernetes.io/scheme: internal
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/certificate-arn: ${acm_cert_arn}
+  hosts:
+    - host: wiki.internal.local
+      paths:
+        - path: /
+          pathType: Prefix
+
+livenessProbe:
+  httpGet:
+    port: http
+    path: /
+
+readinessProbe:
+  httpGet:
+    port: http
+    path: /
+
+startupProbe:
+  httpGet:
+    path: /
+    port: http

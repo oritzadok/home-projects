@@ -1,0 +1,29 @@
+# Consumer container image
+image:
+  repository: ""
+  tag: ""
+
+# Resource limits and requests for the container
+resources: {}
+
+autoscaling:
+  # The ID of the Azure Managed Identity used by KEDA to
+  # authenticate to the service bus
+  kedaManagedIdentityId: ""
+  # Count of messages to trigger scaling on.
+  # Used also as the maximum amount of messages the pod will consume
+  messageCount: ""
+
+# The Kubernetes service account used by the consumer
+serviceAccount:
+  name: "consumer"
+  # The ID of the Azure Managed Identity used by the service account
+  managedIdentityId: ""
+
+# Azure service bus
+serviceBus:
+  namespace: ""
+
+# Azure storage account to store the consumed messages in
+storageAccount:
+  name: ""

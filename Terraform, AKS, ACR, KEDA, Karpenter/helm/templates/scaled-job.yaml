@@ -1,0 +1,39 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledJob
+metadata:
+  name: myconsumer
+spec:
+  jobTargetRef:
+    template:
+      metadata:
+        labels:
+          azure.workload.identity/use: "true"
+      spec:
+        serviceAccountName: {{ .Values.serviceAccount.name | lower }}
+        containers:
+        - image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          name: myconsumer
+          env:
+          - name: SERVICEBUS_FULLY_QUALIFIED_NAMESPACE
+            value: {{ .Values.serviceBus.namespace }}.servicebus.windows.net
+          - name: MESSAGE_COUNT
+            value: {{ .Values.autoscaling.messageCount | quote }}
+          - name: STORAGE_ACCOUNT_URL
+            value: https://{{ .Values.storageAccount.name }}.blob.core.windows.net
+          resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+        restartPolicy: Never
+        nodeSelector:
+          app: service-bus-consumer
+        tolerations:
+        - key: "app/service-bus-consumer"
+          operator: "Exists"
+          effect: "NoSchedule"
+  triggers:
+  - type: azure-servicebus
+    metadata:
+      queueName: myqueue
+      namespace: {{ .Values.serviceBus.namespace }}
+      messageCount: {{ .Values.autoscaling.messageCount | quote }}
+    authenticationRef:
+      name: azure-servicebus-auth

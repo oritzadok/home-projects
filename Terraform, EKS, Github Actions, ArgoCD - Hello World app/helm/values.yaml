@@ -1,0 +1,7 @@
+# Default values for hello-app
+
+replicaCount: 1
+
+image:
+  repository: ""
+  tag: ""

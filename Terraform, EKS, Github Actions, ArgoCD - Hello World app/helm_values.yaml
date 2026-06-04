@@ -1,0 +1,6 @@
+# This file stores the actual values for hello-app, and is monitored by Argo CD.
+# Better practice - store this file in a separated GitOps repository
+# 
+image:
+  repository: ""
+  tag: ""

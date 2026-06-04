@@ -1,0 +1,59 @@
+name: Build and Push
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+    - 'app/**'
+
+  workflow_dispatch:
+
+permissions:
+  id-token: write  # For OIDC authentication, for requesting the JWT
+  contents: write  # Grant write permission to the GITHUB_TOKEN
+
+jobs:
+  build:
+    name: Build and Push
+    runs-on: ubuntu-latest
+    env:
+      ECR_REPOSITORY_URI: ${{ secrets.ECR_REPOSITORY_URI }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        
+      - name: Get short commit SHA
+        id: commit
+        run: echo "IMAGE_TAG=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v5.1.1
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: GitHub_to_AWS_via_FederatedOIDC
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker image and push to Amazon ECR
+        working-directory: ./app
+        run: |
+          docker build \
+            -t ${ECR_REPOSITORY_URI}:${IMAGE_TAG} \
+            .
+
+          docker push ${ECR_REPOSITORY_URI}:${IMAGE_TAG}
+          
+      - name: Set GitOps Helm values file
+        run: |
+          yq e \
+            '.image.repository = "${{ env.ECR_REPOSITORY_URI }}", .image.tag = "${{ env.IMAGE_TAG }}"' \
+            -i helm_values.yaml
+            
+      - name: Commit and push Helm values changes
+        uses: devops-infra/action-commit-push@v1.0.3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          commit_prefix: "[AUTO-COMMIT] "
+          commit_message: "Update GitOps Helm values file"
